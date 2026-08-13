@@ -58,14 +58,23 @@ jobs:
           echo "applications_user contents:"
           ls -la firmware/applications_user || true
 
-      - name: Build .fap (run fbt via bash, skip sync)
+      - name: Build .fap (build all user faps / debug)
         working-directory: firmware
         run: |
-          ls -la
+          echo "------ applications_user list ------"
           ls -la applications_user || true
+          echo "------ Multi_Fuzzer dir list ------"
+          ls -la applications_user/Multi_Fuzzer || true
+          echo "------ application.fam content ------"
+          cat applications_user/Multi_Fuzzer/application.fam || true
+
           chmod +x ./fbt || true
-          echo "Running fbt via bash with FBT_NO_SYNC=1"
-          FBT_NO_SYNC=1 bash ./fbt fap_Multi_Fuzzer || (echo "fbt failed, printing fbt header" && head -n 200 ./fbt && exit 1)
+          echo "Running fbt faps_user (skip sync)"
+          FBT_NO_SYNC=1 bash ./fbt faps_user || (
+            echo "faps_user failed, trying per-app fap targets (fuzzer_ibtn / fuzzer_rfid)"
+            FBT_NO_SYNC=1 bash ./fbt fap_fuzzer_ibtn fap_fuzzer_rfid
+          ) || (echo "All fbt attempts failed" && exit 1)
+
           echo "Looking for built .fap files..."
           find dist -type f -name "*.fap" -print || true
 
