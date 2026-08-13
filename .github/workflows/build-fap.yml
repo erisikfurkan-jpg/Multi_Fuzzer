@@ -14,11 +14,21 @@ jobs:
         with:
           path: multi_fuzzer
 
-      - name: Checkout flipperzero-firmware
+      - name: Checkout flipperzero-firmware (with submodules)
         uses: actions/checkout@v4
         with:
           repository: flipperdevices/flipperzero-firmware
           path: firmware
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Ensure firmware submodules initialized
+        working-directory: firmware
+        run: |
+          git submodule sync --recursive || true
+          git submodule update --init --recursive || true
+          echo "Submodules status:"
+          git submodule status --recursive || true
 
       - name: List firmware dir (debug)
         run: |
@@ -28,7 +38,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git build-essential cmake ninja-build python3 python3-pip gcc-arm-none-eabi
+          sudo apt-get install -y git build-essential cmake ninja-build python3 python3-pip gcc-arm-none-eabi scons
 
       - name: Install firmware Python deps if present
         run: |
@@ -38,9 +48,8 @@ jobs:
           else
             echo "No firmware/requirements.txt found, skipping pip install"
           fi
-          echo "PATH before: $PATH"
           export PATH="$HOME/.local/bin:$PATH"
-          echo "PATH after: $PATH"
+          echo "PATH: $PATH"
 
       - name: Copy app into firmware applications_user
         run: |
@@ -49,14 +58,15 @@ jobs:
           echo "applications_user contents:"
           ls -la firmware/applications_user || true
 
-      - name: Build .fap (run fbt via bash)
+      - name: Build .fap (run fbt via bash, skip sync)
         working-directory: firmware
         run: |
           ls -la
           ls -la applications_user || true
           chmod +x ./fbt || true
           echo "Running fbt via bash with FBT_NO_SYNC=1"
-          FBT_NO_SYNC=1 bash ./fbt fap_Multi_Fuzzer || (echo "fbt failed, printing fbt contents" && head -n 200 ./fbt && exit 1)
+          FBT_NO_SYNC=1 bash ./fbt fap_Multi_Fuzzer || (echo "fbt failed, printing fbt header" && head -n 200 ./fbt && exit 1)
+          echo "Looking for built .fap files..."
           find dist -type f -name "*.fap" -print || true
 
       - name: Upload built .fap artifact
