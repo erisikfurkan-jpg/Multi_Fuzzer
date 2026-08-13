@@ -49,14 +49,14 @@ jobs:
           echo "applications_user contents:"
           ls -la firmware/applications_user || true
 
-      - name: Build .fap (run fbt via python3)
+          - name: Build .fap (run fbt via bash)
         working-directory: firmware
         run: |
           ls -la
           ls -la applications_user || true
           chmod +x ./fbt || true
-          echo "Running fbt via python3"
-          python3 ./fbt fap_Multi_Fuzzer || (echo "fbt failed, printing fbt contents" && head -n 200 ./fbt && exit 1)
+          echo "Running fbt via bash with FBT_NO_SYNC=1"
+          FBT_NO_SYNC=1 bash ./fbt fap_Multi_Fuzzer || (echo "fbt failed, printing fbt contents" && head -n 200 ./fbt && exit 1)
           find dist -type f -name "*.fap" -print || true
 
       - name: Upload built .fap artifact
