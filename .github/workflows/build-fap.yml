@@ -49,7 +49,7 @@ jobs:
           echo "applications_user contents:"
           ls -la firmware/applications_user || true
 
-          - name: Build .fap (run fbt via bash)
+      - name: Build .fap (run fbt via bash)
         working-directory: firmware
         run: |
           ls -la
